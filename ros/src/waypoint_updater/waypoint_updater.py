@@ -158,9 +158,6 @@ class WaypointUpdater(object):
         lane.header.seq = self.seq
         lane.waypoints = [self.base_waypoints[i] for i in waypoint_indices]
 
-        for i in range(LOOKAHEAD_WPS):
-            self.set_waypoint_velocity(lane.waypoints, i, 15.0)
-        
         self.final_waypoints_pub.publish(lane)
         self.seq += 1
 
