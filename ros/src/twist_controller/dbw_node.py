@@ -111,6 +111,7 @@ class DBWNode(object):
 
                 with self.lock:
                     cte = compute_cte(self.waypoints, self.current_pose)
+                    
                 throttle, brake, steer = self.controller.control(self.activated,
                                                                  cte,
                                                                  self.proposed_velocities.twist.linear.x,

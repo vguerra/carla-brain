@@ -9,6 +9,7 @@ def compute_cte(waypoints, pose):
     xs, ys = get_points_wrt_pose(waypoints[:WAYPOINTS_LOOKAHEAD], pose)
     fit = np.poly1d(np.polyfit(xs, ys, 3))
     cte = fit(4)
+
     return cte
 
 def get_points_wrt_pose(waypoints, pose):
@@ -34,4 +35,5 @@ def yaw_from_orientation(orientation):
                   orientation.z,
                   orientation.w]
     _, _, yaw = euler_from_quaternion(quaternion)
+    
     return yaw
