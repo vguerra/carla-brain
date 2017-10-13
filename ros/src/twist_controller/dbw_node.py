@@ -8,6 +8,7 @@ from styx_msgs.msg import Lane
 
 from twist_controller import Controller
 from dbw_cte import compute_cte
+import threading
 
 '''
 You can build this node only after you have built (or partially built) the `waypoint_updater` node.
@@ -48,6 +49,7 @@ class DBWNode(object):
         steer_ratio = rospy.get_param('~steer_ratio', 14.8)
         max_lat_accel = rospy.get_param('~max_lat_accel', 3.)
         max_steer_angle = rospy.get_param('~max_steer_angle', 8.)
+        self.lock = threading.Lock()
 
         self.dbw_enabled = False
 
@@ -98,7 +100,7 @@ class DBWNode(object):
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50)  # originally 50Hz
+        rate = rospy.Rate(10)  # originally 50Hz
         while not rospy.is_shutdown():
 
             if self._valid_state():
@@ -107,7 +109,8 @@ class DBWNode(object):
                 #               self.proposed_velocities.twist.angular.z,
                 #               self.current_velocity.twist.linear.x)
 
-                cte = compute_cte(self.waypoints, self.current_pose)
+                with self.lock:
+                    cte = compute_cte(self.waypoints, self.current_pose)
                 throttle, brake, steer = self.controller.control(self.activated,
                                                                  cte,
                                                                  self.proposed_velocities.twist.linear.x,
@@ -155,10 +158,12 @@ class DBWNode(object):
         self.activated = msg.data
 
     def current_pose_cb(self, msg):
-        self.current_pose = msg.pose
+        with self.lock:
+            self.current_pose = msg.pose
 
     def waypoints_cb(self, msg):
-        self.waypoints = msg.waypoints
+        with self.lock:
+            self.waypoints = msg.waypoints
 
     def _valid_state(self):
         """ Checks whethear node has all information needed to operate correctly
