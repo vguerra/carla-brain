@@ -43,7 +43,6 @@ class Controller(object):
         throttle = 0.3
         brake = 0.0
         steer = 0.0
-        steering = 0.0
 
         if dbw_enabled:
             current_time = rospy.get_time()
@@ -55,9 +54,11 @@ class Controller(object):
                                                         current_velocity=current_velocity)
             corrective_steering = self.steer_pid.step(cte, sample_time)
 
-            rospy.logwarn('steer = %f, steering = %f, cte = %f, sample_time = %f', steer, steering, cte, sample_time)
+            steer = corrective_steering + PRED_STEERING_FACTOR * predictive_steering
+
+            rospy.logwarn('steer = %f, cte = %f, sample_time = %f', steer, cte, sample_time)
         else:
             self.steer_pid.reset()
             self.prev_time = rospy.get_time()
 
-        return throttle, brake, steer + PRED_STEERING_FACTOR * steering
+        return throttle, brake, steer
