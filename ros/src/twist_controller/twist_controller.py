@@ -26,7 +26,8 @@ class Controller(object):
 
         self.prev_time = rospy.get_time()
 
-        self.steer_pid = PID(kp=0.2, ki=0.0009, kd=1.5, mn=-max_steer_angle, mx=max_steer_angle)
+        self.steer_pid = PID(kp=0.2, ki=0.0009, kd=1.5,
+                             mn=-max_steer_angle, mx=max_steer_angle)
         self.max_steer_angle = max_steer_angle
         self.yaw_controller = YawController(wheel_base=wheel_base,
                                             steer_ratio=steer_ratio,
@@ -50,10 +51,15 @@ class Controller(object):
             sample_time = current_time - self.prev_time
             self.prev_time = current_time
 
-            predictive_steering = self.yaw_controller.get_steering(linear_velocity=linear_velocity,
-                                                        angular_velocity=angular_velocity,
-                                                        current_velocity=current_velocity)
-            corrective_steering = self.steer_pid.step(cte, sample_time)
+            predictive_steer = self.yaw_controller.get_steering(linear_velocity=linear_velocity,
+                                                                angular_velocity=angular_velocity,
+                                                                current_velocity=current_velocity)
+            corrective_steer = self.steer_pid.step(cte, sample_time)
+
+            steer = corrective_steer + PRED_STEERING_FACTOR * predictive_steer
+
+            rospy.logwarn('steer = %f, cte = %f, sample_time = %f',
+                          steer, cte, sample_time)
 
             steer = corrective_steering + PRED_STEERING_FACTOR * predictive_steering
 
