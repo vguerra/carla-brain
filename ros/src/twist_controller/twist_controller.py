@@ -24,17 +24,24 @@ class Controller(object):
                  max_lat_accel,  # YawController
                  max_steer_angle):  # YawController
 
+        self.brake_deadband = brake_deadband
+        self.vehicle_mass = vehicle_mass
+        self.fuel_capacity = fuel_capacity
+        self.wheel_radius = wheel_radius
+
         self.prev_time = rospy.get_time()
-        self.velocity_pid = PID(kp=0.2, ki=0.00009, kd=1.7, mn=-max_steer_angle, mx=max_steer_angle)
 
         self.steer_pid = PID(kp=0.2, ki=0.00009, kd=1.7,
                              mn=-max_steer_angle, mx=max_steer_angle)
+
         self.max_steer_angle = max_steer_angle
         self.yaw_controller = YawController(wheel_base=wheel_base,
                                             steer_ratio=steer_ratio,
                                             min_speed=2.0,
                                             max_lat_accel=max_lat_accel,
                                             max_steer_angle=max_steer_angle)
+
+        self.accel_pid = PID(kp=0.2, ki=0.005, kd=0.1, mn=decel_limit, mx=accel_limit)
 
     def control(self,
                 dbw_enabled,
@@ -43,7 +50,7 @@ class Controller(object):
                 angular_velocity,
                 current_velocity):
 
-        throttle = 0.3
+        throttle = 0.0
         brake = 0.0
         steer = 0.0
 
@@ -55,23 +62,33 @@ class Controller(object):
             predictive_steer = self.yaw_controller.get_steering(linear_velocity=linear_velocity,
                                                                 angular_velocity=angular_velocity,
                                                                 current_velocity=current_velocity)
-            corrective_steer = self.steer_pid.step(cte, sample_time)
+
+            corrective_steer = self.steer_pid.step(error=cte, sample_time=sample_time)
 
             steer = 0.3 * corrective_steer + 0.2 * predictive_steer
 
-            rospy.logwarn('steer = %f, cte = %f, sample_time = %f, corrective_steer = %f, predictive_steer = %f',
-                          steer, cte, sample_time, corrective_steer, predictive_steer)
+            rospy.logwarn('sample_time = %f', sample_time)
+            rospy.logwarn('steer = %f, cte = %f, corrective_steer = %f, predictive_steer = %f',
+                          steer, cte, corrective_steer, predictive_steer)
 
-            steer = corrective_steering + PRED_STEERING_FACTOR * predictive_steering
+            vel_delta = linear_velocity - current_velocity
+            accel = self.accel_pid.step(error=vel_delta, sample_time=sample_time)
 
-            rospy.logwarn('steer = %f, cte = %f, sample_time = %f', steer, cte, sample_time)
+            rospy.logwarn('desired vel = %f, current vel = %f, accel = %f',
+                          linear_velocity, current_velocity, accel)
+
+            if accel < 0.0:
+                if -accel < self.brake_deadband:
+                    accel = 0.0
+                
+                total_car_mass = self.vehicle_mass + self.fuel_capacity * GAS_DENSITY
+                throttle, brake = 0, -accel * total_car_mass * self.wheel_radius
+            else:
+                throttle, brake = accel, 0
+
         else:
             self.steer_pid.reset()
+            self.accel_pid.reset()
             self.prev_time = rospy.get_time()
 
-<<<<<<< Updated upstream
-=======
-        # throttle = 1.0 - 0.9 * self.max_steer_angle / 100 * fabs(steer)
-
->>>>>>> Stashed changes
         return throttle, brake, steer
