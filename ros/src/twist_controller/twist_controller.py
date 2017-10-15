@@ -25,8 +25,9 @@ class Controller(object):
                  max_steer_angle):  # YawController
 
         self.prev_time = rospy.get_time()
+        self.velocity_pid = PID(kp=0.2, ki=0.00009, kd=1.7, mn=-max_steer_angle, mx=max_steer_angle)
 
-        self.steer_pid = PID(kp=0.2, ki=0.0009, kd=1.5,
+        self.steer_pid = PID(kp=0.2, ki=0.00009, kd=1.7,
                              mn=-max_steer_angle, mx=max_steer_angle)
         self.max_steer_angle = max_steer_angle
         self.yaw_controller = YawController(wheel_base=wheel_base,
@@ -56,10 +57,10 @@ class Controller(object):
                                                                 current_velocity=current_velocity)
             corrective_steer = self.steer_pid.step(cte, sample_time)
 
-            steer = corrective_steer + PRED_STEERING_FACTOR * predictive_steer
+            steer = 0.3 * corrective_steer + 0.2 * predictive_steer
 
-            rospy.logwarn('steer = %f, cte = %f, sample_time = %f',
-                          steer, cte, sample_time)
+            rospy.logwarn('steer = %f, cte = %f, sample_time = %f, corrective_steer = %f, predictive_steer = %f',
+                          steer, cte, sample_time, corrective_steer, predictive_steer)
 
             steer = corrective_steering + PRED_STEERING_FACTOR * predictive_steering
 
@@ -68,4 +69,9 @@ class Controller(object):
             self.steer_pid.reset()
             self.prev_time = rospy.get_time()
 
+<<<<<<< Updated upstream
+=======
+        # throttle = 1.0 - 0.9 * self.max_steer_angle / 100 * fabs(steer)
+
+>>>>>>> Stashed changes
         return throttle, brake, steer

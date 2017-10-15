@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import math
 import rospy
+
 from geometry_msgs.msg import PoseStamped
 from styx_msgs.msg import Lane, Waypoint
-
+from waypoint_helper import is_waypoint_behind_pose
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -136,6 +137,14 @@ class WaypointUpdater(object):
             else:
                 closest_distance = distance
                 prev_index = index
+
+        while is_waypoint_behind_pose(self.current_pose, self.base_waypoints[prev_index]):
+            prev_index += 1
+            prev_index %= self.len_base_waypoints
+
+        assert(is_waypoint_behind_pose(self.current_pose, self.base_waypoints[prev_index]) is False)
+
+        self.current_waypoint_ahead = prev_index
 
         return prev_index
         
