@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import math
 import rospy
+import threading
 from std_msgs.msg import Bool
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 from geometry_msgs.msg import TwistStamped, PoseStamped
 from styx_msgs.msg import Lane
 
 from twist_controller import Controller
-from dbw_cte import compute_cte, get_cross_track_error
-import threading
+from dbw_cte import compute_cte
 
 '''
 You can build this node only after you have built (or partially built) the `waypoint_updater` node.
@@ -111,12 +111,9 @@ class DBWNode(object):
 
                 with self.lock:
                     cte = compute_cte(self.waypoints, self.current_pose)
-                    other_cte = get_cross_track_error(self.waypoints, self.current_pose)
 
-                    rospy.logwarn('my cte : %f , other cte: %f', cte, other_cte)
-                    
                 throttle, brake, steer = self.controller.control(self.activated,
-                                                                 other_cte,
+                                                                 cte,
                                                                  self.proposed_velocities.twist.linear.x,
                                                                  self.proposed_velocities.twist.angular.z,
                                                                  self.current_velocity.twist.linear.x)
