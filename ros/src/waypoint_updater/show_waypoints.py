@@ -20,15 +20,16 @@ from geometry_msgs.msg import PoseStamped
 from dbw_mkz_msgs.msg import SteeringCmd, SteeringReport, ThrottleCmd, BrakeCmd
 from styx_msgs.msg import TrafficLightArray, Lane
 from sensor_msgs.msg import Image
-from cv_bridge import CvBridge, CvBridgeError
+from cv_bridge import CvBridge
 
 import cv2
 import numpy as np
 
 import matplotlib
-matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+matplotlib.use('Qt5Agg')
 
 
 class Visualization(QtWidgets.QWidget):
@@ -81,7 +82,7 @@ class Visualization(QtWidgets.QWidget):
 
         self.img_format_table = {'rgb8': QtGui.QImage.Format_RGB888, 'mono8': QtGui.QImage.Format_Mono,
                                  'bgr8': QtGui.QImage.Format_RGB888}
-        self.image = QtGui.QImage(np.zeros([300,400,3]), 400, 300, self.img_format_table['bgr8'])
+        self.image = QtGui.QImage(np.zeros([300, 400, 3]), 400, 300, self.img_format_table['bgr8'])
 
         self.initUI()
 
